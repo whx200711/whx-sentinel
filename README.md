@@ -1,3 +1,9 @@
+[![CI](https://github.com/whx200711/whx-sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/whx200711/whx-sentinel/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/whx200711/whx-sentinel)](https://github.com/whx200711/whx-sentinel/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)](#)
+[![Tests](https://img.shields.io/badge/smoke-83%20passed-brightgreen)](#)
+
 # WHX 哨兵（WHX Sentinel）
 
 **本机 Windows 主机防护代理 · 本地安全看板 · 只在本机运行**
