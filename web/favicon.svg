@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="WHX 哨兵">
+  <defs>
+    <linearGradient id="shield" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="0.55" stop-color="#818cf8"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#05070d"/>
+  <path d="M32 6 54 14v17c0 13.2-8.8 22.8-22 27C18.8 53.8 10 44.2 10 31V14L32 6Z" fill="url(#shield)" opacity="0.16" stroke="url(#shield)" stroke-width="2.4"/>
+  <path d="M22 32.5 29 39.5 43 25" fill="none" stroke="#4ade80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="14.5" r="2.2" fill="#38bdf8"/>
+</svg>

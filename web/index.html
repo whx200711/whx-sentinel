@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#05070d">
+    <meta name="description" content="WHX 哨兵 · 本机 Windows 主机安全监控看板：事件趋势、传感器状态、安全配置检查与处置操作。">
+    <meta name="referrer" content="no-referrer">
+    <title>WHX 哨兵 · 本机安全看板</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <svg class="logo" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                    <defs>
+                        <linearGradient id="logo-shield" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+                            <stop offset="0" stop-color="#38bdf8"/>
+                            <stop offset="0.55" stop-color="#818cf8"/>
+                            <stop offset="1" stop-color="#a78bfa"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M32 6 54 14v17c0 13.2-8.8 22.8-22 27C18.8 53.8 10 44.2 10 31V14L32 6Z"
+                          fill="url(#logo-shield)" opacity="0.16" stroke="url(#logo-shield)" stroke-width="2.4"/>
+                    <path d="M22 32.5 29 39.5 43 25" fill="none" stroke="#4ade80" stroke-width="4"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="32" cy="14.5" r="2.2" fill="#38bdf8"/>
+                </svg>
+                <div class="brand-text">
+                    <h1>WHX 哨兵</h1>
+                    <span class="brand-sub">Sentinel · 本机主机防护代理</span>
+                </div>
+            </div>
+
+            <div class="conn-pill" id="conn-pill" data-state="connecting" title="与本地哨兵服务的连接状态">
+                <span class="dot" id="conn-dot" aria-hidden="true"></span>
+                <span id="conn-text">正在连接…</span>
+            </div>
+
+            <div class="topbar-meta">
+                <span class="meta-item">
+                    <span class="meta-label">运行时长</span>
+                    <strong id="uptime">—</strong>
+                </span>
+                <span class="admin-badge" id="admin-badge" data-level="standard" title="管理员模式下才能读取部分系统传感器">标准模式</span>
+            </div>
+
+            <span class="topbar-spacer" aria-hidden="true"></span>
+
+            <div class="topbar-actions">
+                <button class="btn" id="btn-security-center" type="button">🛡 打开 Windows 安全中心</button>
+                <button class="btn" id="btn-settings" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settings-drawer">⚙ 设置</button>
+                <span class="refresh-info">最后刷新 <time id="last-refresh">—</time></span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flash-stack" id="flash-stack" role="status" aria-live="polite"></div>
+
+    <main class="layout" id="main">
+        <div class="section-head">
+            <div>
+                <span class="eyebrow">Overview · 24h</span>
+                <h2 class="section-title">安全态势总览</h2>
+            </div>
+            <span class="section-meta" id="overview-meta">统计窗口：最近 24 小时 · 等待数据</span>
+        </div>
+
+        <section class="stats" aria-label="安全态势指标">
+            <article class="stat-card" data-sev="HIGH" data-stat="high">
+                <span class="stat-label">24h 高危 · HIGH</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">需立即处置</span>
+            </article>
+            <article class="stat-card" data-sev="MEDIUM" data-stat="medium">
+                <span class="stat-label">24h 中危 · MEDIUM</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">建议尽快确认</span>
+            </article>
+            <article class="stat-card" data-sev="LOW" data-stat="low">
+                <span class="stat-label">24h 低危 · LOW</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">观察即可</span>
+            </article>
+            <article class="stat-card" data-sev="INFO" data-stat="info">
+                <span class="stat-label">24h 提示 · INFO</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">信息类记录</span>
+            </article>
+            <article class="stat-card" data-tone="accent" data-stat="open">
+                <span class="stat-label">未处理事件</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">状态为「未处理」</span>
+            </article>
+            <article class="stat-card" data-tone="good" data-stat="sensors">
+                <span class="stat-label">传感器在线</span>
+                <strong class="stat-value is-text">—</strong>
+                <span class="stat-foot">等待采集</span>
+            </article>
+            <article class="stat-card" data-tone="good" data-stat="defender">
+                <span class="stat-label">Defender 实时保护</span>
+                <strong class="stat-value is-text">—</strong>
+                <span class="stat-foot">等待检测</span>
+            </article>
+            <article class="stat-card" data-tone="accent" data-stat="firewall">
+                <span class="stat-label">防火墙</span>
+                <strong class="stat-value is-text">—</strong>
+                <span class="stat-foot">等待检测</span>
+            </article>
+            <article class="stat-card" data-tone="accent" data-stat="ai">
+                <span class="stat-label">AI 研判</span>
+                <strong class="stat-value is-text">—</strong>
+                <span class="stat-foot">等待数据</span>
+            </article>
+            <article class="stat-card" data-tone="muted" data-stat="total">
+                <span class="stat-label">事件总数</span>
+                <strong class="stat-value">—</strong>
+                <span class="stat-foot">数据库全部记录</span>
+            </article>
+        </section>
+
+        <div class="main-grid">
+            <div class="col-main">
+                <section class="panel chart-panel" aria-label="最近 24 小时事件趋势">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Trend · 24h</span>
+                            <h2 class="panel-title">24 小时事件趋势 <span class="count" id="chart-total">—</span></h2>
+                        </div>
+                        <div class="chart-legend" aria-hidden="true">
+                            <span class="legend-item"><span class="legend-dot sev-HIGH"></span>高危</span>
+                            <span class="legend-item"><span class="legend-dot sev-MEDIUM"></span>中危</span>
+                            <span class="legend-item"><span class="legend-dot sev-LOW"></span>低危</span>
+                            <span class="legend-item"><span class="legend-dot sev-INFO"></span>提示</span>
+                        </div>
+                    </div>
+                    <div class="chart-wrap">
+                        <canvas id="trend-canvas" role="img" aria-label="最近 24 小时按严重度堆叠的事件趋势柱状图"></canvas>
+                        <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+                    </div>
+                    <div class="chart-foot">
+                        <span id="chart-summary">等待数据…</span>
+                        <span>按小时聚合 · 悬停查看详情</span>
+                    </div>
+                </section>
+
+                <section class="panel events-panel" id="events-panel" aria-label="最近 24 小时安全事件列表">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Events · 近 24 小时</span>
+                            <h2 class="panel-title">安全事件 <span class="count" id="events-count">—</span></h2>
+                        </div>
+                        <div class="pager-actions">
+                            <a class="btn btn-sm btn-muted" id="btn-export" href="/api/export?limit=1000" download="whx-sentinel-events.json">导出 JSON</a>
+                        </div>
+                    </div>
+
+                    <div class="filters">
+                        <label class="filter-field">严重度
+                            <select id="filter-severity">
+                                <option value="">全部</option>
+                                <option value="HIGH">高危</option>
+                                <option value="MEDIUM">中危</option>
+                                <option value="LOW">低危</option>
+                                <option value="INFO">提示</option>
+                            </select>
+                        </label>
+                        <label class="filter-field">传感器
+                            <select id="filter-sensor">
+                                <option value="">全部</option>
+                            </select>
+                        </label>
+                        <label class="filter-field">状态
+                            <select id="filter-status">
+                                <option value="">全部</option>
+                                <option value="new">未处理</option>
+                                <option value="ack">已确认</option>
+                                <option value="ignored">已忽略</option>
+                            </select>
+                        </label>
+                        <div class="search-field">
+                            <span class="search-icon" aria-hidden="true">⌕</span>
+                            <input id="filter-q" type="search" placeholder="搜索标题 / 详情 / 规则" autocomplete="off" aria-label="关键字搜索">
+                        </div>
+                        <span class="spacer" aria-hidden="true"></span>
+                        <button class="btn btn-sm btn-muted" id="btn-clear-filters" type="button">清除筛选</button>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="events-table">
+                            <caption class="sr-only">最近 24 小时安全事件，点击任意行查看详情</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">时间</th>
+                                    <th scope="col">严重度</th>
+                                    <th scope="col">传感器</th>
+                                    <th scope="col">标题 / 摘要</th>
+                                    <th scope="col">重复</th>
+                                    <th scope="col">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-body">
+                                <tr aria-hidden="true">
+                                    <td><span class="skeleton skeleton-line w70"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                    <td><span class="skeleton skeleton-line w85"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                </tr>
+                                <tr aria-hidden="true">
+                                    <td><span class="skeleton skeleton-line w70"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                    <td><span class="skeleton skeleton-line w85"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                </tr>
+                                <tr aria-hidden="true">
+                                    <td><span class="skeleton skeleton-line w70"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                    <td><span class="skeleton skeleton-line w85"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                </tr>
+                                <tr aria-hidden="true">
+                                    <td><span class="skeleton skeleton-line w70"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                    <td><span class="skeleton skeleton-line w85"></span></td>
+                                    <td><span class="skeleton skeleton-line w40"></span></td>
+                                    <td><span class="skeleton skeleton-line w55"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pager">
+                        <span class="pager-info" id="pager-info">加载中…</span>
+                        <div class="pager-actions">
+                            <button class="btn btn-sm btn-muted" id="btn-prev" type="button" disabled>上一页</button>
+                            <button class="btn btn-sm btn-muted" id="btn-next" type="button" disabled>下一页</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="col-side" aria-label="侧栏监控信息">
+                <section class="panel" aria-label="传感器状态">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Sensors</span>
+                            <h2 class="panel-title">传感器状态 <span class="count" id="sensor-count">—</span></h2>
+                        </div>
+                        <span class="panel-meta" id="sensor-meta">—</span>
+                    </div>
+                    <div class="sensor-list" id="sensor-list">
+                        <div class="skeleton-list">
+                            <div class="skeleton-row"><span class="skeleton skeleton-line w70"></span><span class="skeleton skeleton-line skeleton-fixed"></span></div>
+                            <div class="skeleton-row"><span class="skeleton skeleton-line w55"></span><span class="skeleton skeleton-line skeleton-fixed"></span></div>
+                            <div class="skeleton-row"><span class="skeleton skeleton-line w85"></span><span class="skeleton skeleton-line skeleton-fixed"></span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="安全配置检查">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Exposure</span>
+                            <h2 class="panel-title">安全配置检查 <span class="count" id="exposure-count">—</span></h2>
+                        </div>
+                        <span class="panel-meta" id="exposure-meta">—</span>
+                    </div>
+                    <div class="check-list" id="exposure-list">
+                        <div class="panel-empty">
+                            <span class="empty-icon">🛡</span>
+                            <span class="empty-title">正在检测…</span>
+                            <span class="empty-hint">等待暴露面传感器完成首轮检查</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="最近处置记录">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Actions</span>
+                            <h2 class="panel-title">最近处置 <span class="count" id="action-count">—</span></h2>
+                        </div>
+                        <span class="panel-meta">最近 20 条</span>
+                    </div>
+                    <ul class="action-list" id="action-list">
+                        <li class="panel-empty">加载中…</li>
+                    </ul>
+                </section>
+
+                <section class="panel" aria-label="主机与数据库信息">
+                    <div class="panel-head">
+                        <div>
+                            <span class="eyebrow">Host</span>
+                            <h2 class="panel-title">主机与数据库</h2>
+                        </div>
+                        <span class="panel-meta" id="host-meta">—</span>
+                    </div>
+                    <dl class="host-grid">
+                        <div>
+                            <dt>操作系统</dt>
+                            <dd id="host-os">—</dd>
+                        </div>
+                        <div>
+                            <dt>运行时长</dt>
+                            <dd id="host-uptime">—</dd>
+                        </div>
+                        <div>
+                            <dt>内存</dt>
+                            <dd id="host-ram">—</dd>
+                        </div>
+                        <div>
+                            <dt>磁盘剩余</dt>
+                            <dd id="host-disk">—</dd>
+                        </div>
+                        <div>
+                            <dt>CPU 核心</dt>
+                            <dd id="host-cpu">—</dd>
+                        </div>
+                        <div>
+                            <dt>当前用户</dt>
+                            <dd id="host-user">—</dd>
+                        </div>
+                        <div>
+                            <dt>事件库</dt>
+                            <dd id="host-db">—</dd>
+                        </div>
+                        <div>
+                            <dt>开机自启动</dt>
+                            <dd id="host-autostart">—</dd>
+                        </div>
+                        <div class="host-wide">
+                            <dt>数据库路径</dt>
+                            <dd class="wrap" id="host-db-path">—</dd>
+                        </div>
+                    </dl>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p class="disclaimer">
+            <strong>免责声明：</strong>本地主机监控代理，不是杀毒软件，不能替代 Windows Defender；所有数据仅保存在本机。
+        </p>
+        <div class="footer-meta">
+            <span id="footer-version">WHX Sentinel —</span>
+            <span>API 127.0.0.1:8765 · 前端零外部依赖</span>
+        </div>
+    </footer>
+
+    <noscript>
+        <p class="noscript">本看板需要启用 JavaScript 才能读取本机哨兵 API 数据。</p>
+    </noscript>
+
+    <button class="drawer-backdrop" id="drawer-backdrop" type="button" aria-label="关闭抽屉" hidden></button>
+
+    <!-- 事件详情抽屉 -->
+    <aside class="drawer" id="event-drawer" role="dialog" aria-modal="true" aria-labelledby="event-drawer-title" hidden>
+        <header class="drawer-head">
+            <div class="drawer-head-copy">
+                <span class="eyebrow">Event detail</span>
+                <div class="drawer-title" id="event-drawer-title">事件详情</div>
+                <div class="drawer-sub" id="event-drawer-sub">—</div>
+            </div>
+            <button class="drawer-close" id="close-event-drawer" type="button" aria-label="关闭事件详情">✕</button>
+        </header>
+        <div class="drawer-body" id="event-drawer-body">
+            <div class="skeleton-list">
+                <div class="skeleton-row"><span class="skeleton skeleton-line w55"></span></div>
+                <div class="skeleton-row"><span class="skeleton skeleton-line w85"></span></div>
+                <div class="skeleton-row"><span class="skeleton skeleton-line w70"></span></div>
+            </div>
+        </div>
+        <footer class="drawer-foot" id="event-drawer-foot" hidden></footer>
+    </aside>
+
+    <!-- 设置抽屉 -->
+    <aside class="drawer drawer-wide" id="settings-drawer" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+        <header class="drawer-head">
+            <div class="drawer-head-copy">
+                <span class="eyebrow">Settings</span>
+                <div class="drawer-title" id="settings-title">哨兵设置</div>
+                <div class="drawer-sub">本机配置 · 写操作需本机控制令牌</div>
+            </div>
+            <button class="drawer-close" id="close-settings" type="button" aria-label="关闭设置">✕</button>
+        </header>
+
+        <div class="drawer-body">
+            <section class="settings-section" aria-labelledby="settings-ai-title">
+                <h3 id="settings-ai-title">AI 研判</h3>
+                <p class="settings-hint">仅高危事件会进入本机 Ollama 研判队列；模型不可用时看板只展示规则结论。</p>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">启用 AI 研判</div>
+                        <div class="field-desc" id="ai-enabled-hint">关闭后不再请求本机模型</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="switch" title="启用 AI 研判">
+                            <input type="checkbox" id="set-ai-enabled">
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">模型名称</div>
+                        <div class="field-desc">本机 Ollama 模型，例如 deepseek-r1:8b</div>
+                    </div>
+                    <div class="field-control">
+                        <input type="text" id="set-ai-model" placeholder="deepseek-r1:8b" autocomplete="off">
+                        <button class="btn btn-sm btn-link" id="btn-save-ai-model" type="button">保存模型</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="settings-notify-title">
+                <h3 id="settings-notify-title">通知</h3>
+                <p class="settings-hint">命中阈值的事件会由哨兵在本机弹出 Windows Toast 通知。</p>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">启用 Toast 通知</div>
+                        <div class="field-desc">仅本机弹窗，不发送任何数据</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="switch" title="启用 Toast 通知">
+                            <input type="checkbox" id="set-toast-enabled">
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">最低通知级别</div>
+                        <div class="field-desc">达到该级别的事件才通知</div>
+                    </div>
+                    <div class="field-control">
+                        <select id="set-toast-severity">
+                            <option value="HIGH">高危</option>
+                            <option value="MEDIUM">中危</option>
+                            <option value="LOW">低危</option>
+                            <option value="INFO">提示</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="settings-auto-title">
+                <h3 id="settings-auto-title">自动处置</h3>
+                <p class="danger-note">⚠ 以下开关默认关闭。开启后哨兵会在告警发生时自动执行处置动作，请确认你理解风险后再启用。</p>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">发现恶意软件后自动快速扫描</div>
+                        <div class="field-desc">调用 Windows Defender 快速扫描</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="switch" title="发现恶意软件后自动快速扫描">
+                            <input type="checkbox" id="set-auto-scan">
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">高危外联自动封锁 IP</div>
+                        <div class="field-desc">向本机防火墙写入出站阻断规则</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="switch" title="高危外联自动封锁 IP">
+                            <input type="checkbox" id="set-auto-block">
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="settings-retention-title">
+                <h3 id="settings-retention-title">数据保留</h3>
+                <p class="settings-hint">超过保留天数的本机事件会被定期清理；数据只写入本机 SQLite。</p>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">保留天数</div>
+                        <div class="field-desc">1–365 天</div>
+                    </div>
+                    <div class="field-control">
+                        <input type="number" id="set-retention" min="1" max="365" step="1">
+                        <button class="btn btn-sm btn-link" id="btn-save-retention" type="button">保存</button>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-copy">
+                        <div class="field-label">金丝雀文件监控</div>
+                        <div class="field-desc">在「文档\WHX-Sentinel-Canary」放置诱饵文件，被改动或删除时告警</div>
+                    </div>
+                    <div class="field-control">
+                        <label class="switch" title="金丝雀文件监控">
+                            <input type="checkbox" id="set-canary">
+                            <span class="switch-track" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="settings-allow-title">
+                <h3 id="settings-allow-title">白名单管理</h3>
+                <p class="settings-hint">命中的进程名 / 命令行标记 / 路径前缀 / 远端 IP 不再触发对应告警，修改即时生效。</p>
+
+                <div class="allow-group" data-kind="process_names">
+                    <div class="allow-head">
+                        <span class="allow-name">进程名</span>
+                        <span class="allow-hint">小写进程名，如 chrome.exe</span>
+                    </div>
+                    <ul class="allow-list" id="allow-list-process_names"></ul>
+                    <div class="allow-form">
+                        <input type="text" id="allow-input-process_names" placeholder="chrome.exe" autocomplete="off" aria-label="添加进程名白名单">
+                        <button class="btn btn-sm btn-link" id="allow-add-process_names" type="button">添加</button>
+                    </div>
+                </div>
+
+                <div class="allow-group" data-kind="cmdline_contains">
+                    <div class="allow-head">
+                        <span class="allow-name">命令行标记</span>
+                        <span class="allow-hint">命令行包含任一标记则放行</span>
+                    </div>
+                    <ul class="allow-list" id="allow-list-cmdline_contains"></ul>
+                    <div class="allow-form">
+                        <input type="text" id="allow-input-cmdline_contains" placeholder="WHX_SENTINEL_INTERNAL" autocomplete="off" aria-label="添加命令行标记白名单">
+                        <button class="btn btn-sm btn-link" id="allow-add-cmdline_contains" type="button">添加</button>
+                    </div>
+                </div>
+
+                <div class="allow-group" data-kind="paths">
+                    <div class="allow-head">
+                        <span class="allow-name">可执行路径前缀</span>
+                        <span class="allow-hint">如 C:\Tools\</span>
+                    </div>
+                    <ul class="allow-list" id="allow-list-paths"></ul>
+                    <div class="allow-form">
+                        <input type="text" id="allow-input-paths" placeholder="C:\Tools\" autocomplete="off" aria-label="添加路径白名单">
+                        <button class="btn btn-sm btn-link" id="allow-add-paths" type="button">添加</button>
+                    </div>
+                </div>
+
+                <div class="allow-group" data-kind="remote_ips">
+                    <div class="allow-head">
+                        <span class="allow-name">远端 IP</span>
+                        <span class="allow-hint">与该 IP 的外联不再告警</span>
+                    </div>
+                    <ul class="allow-list" id="allow-list-remote_ips"></ul>
+                    <div class="allow-form">
+                        <input type="text" id="allow-input-remote_ips" placeholder="203.0.113.10" autocomplete="off" aria-label="添加远端 IP 白名单">
+                        <button class="btn btn-sm btn-link" id="allow-add-remote_ips" type="button">添加</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="settings-section" aria-labelledby="settings-maint-title">
+                <h3 id="settings-maint-title">维护与危险操作</h3>
+                <p class="settings-hint">重置基线会清空自启动 / 文件完整性 / Defender 排除项的已知状态并重新采集。</p>
+                <div class="settings-actions">
+                    <button class="btn btn-sm btn-muted" id="btn-test-toast" type="button">🔔 测试通知</button>
+                    <button class="btn btn-sm btn-muted" id="btn-reset-baseline" type="button">重置基线</button>
+                    <button class="btn btn-sm btn-danger" id="btn-shutdown" type="button">停止哨兵</button>
+                </div>
+                <p class="settings-footnote">
+                    所有写操作携带 sessionStorage 中的本机控制令牌；配置写入本机 data/config.json。<br>
+                    停止哨兵后需在启动它的终端重新运行，看板将显示「未连接」。
+                </p>
+            </section>
+        </div>
+    </aside>
+</body>
+</html>

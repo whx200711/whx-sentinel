@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible problem with WHX Sentinel
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please **do not** include your
+        control token, `data/config.json`, or screenshots with real usernames/IPs.
+  - type: input
+    id: version
+    attributes:
+      label: WHX Sentinel version
+      description: Output of `python sentinel.py --version`
+      placeholder: "WHX 哨兵 v1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2 (22631)"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: How was it running?
+      options:
+        - Standard mode (no elevation)
+        - Elevated / administrator mode
+        - `--once` one-shot collection
+        - Not running / dashboard only
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the agent with ...
+        2. Open the dashboard at ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour + logs
+      description: Relevant tail of `data/logs/sentinel.log` (remove tokens and personal paths)
+    validations:
+      required: true
+  - type: textarea
+    id: smoke
+    attributes:
+      label: Smoke test result (optional)
+      description: Output of `python tests/smoke_test.py` summary line
+      render: text

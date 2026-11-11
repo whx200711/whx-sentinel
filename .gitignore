@@ -1,0 +1,40 @@
+# ---- Runtime data (never commit) ----
+data/
+_smoke_data/
+_runtime_test/
+_selftest*/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Local config / secrets ----
+config.json
+.env
+.env.*
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Temp ----
+*.tmp
+*.swp

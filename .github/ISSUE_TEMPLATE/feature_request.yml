@@ -1,0 +1,36 @@
+name: Feature request / detection idea
+description: Suggest a new rule, sensor, dashboard feature or integration
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        WHX Sentinel stays local-only and non-invasive by design. Proposals that add
+        cloud/telemetry dependencies or automatic “kill” behaviour are unlikely to be
+        accepted.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: For detection rules, include the signal source (process / event log / network ...) and a sample of the data.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints checklist
+      options:
+        - label: This can work fully offline / on the local machine
+          required: true
+        - label: This does not require new telemetry or remote services
+          required: true
